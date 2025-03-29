@@ -13,31 +13,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class TravelBot:
+class Bot:
     def __init__(self):
-        self.application = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
-        self.setup_handlers()
-
-    def setup_handlers(self):
-        # Команды
-        self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(CommandHandler("help", self.help))
-        self.application.add_handler(CommandHandler("tours", self.list_tours))
-        self.application.add_handler(CommandHandler("hot", self.hot_tours))
-        
-        # Обработчики callback-запросов
-        self.application.add_handler(CallbackQueryHandler(self.tour_details, pattern="^tour_"))
-        self.application.add_handler(CallbackQueryHandler(self.create_request, pattern="^request_"))
+        self.app = None
+        if settings.telegram_bot_token:
+            self.app = Application.builder().token(settings.telegram_bot_token).build()
 
     async def initialize(self):
-        await self.application.initialize()
+        if not self.app:
+            return
+        # Здесь будет инициализация обработчиков команд
 
     async def start(self):
-        await self.application.start()
-        await self.application.run_polling()
+        if not self.app:
+            return
+        await self.app.initialize()
+        await self.app.start()
+        await self.app.update_bot_data({})
 
     async def stop(self):
-        await self.application.stop()
+        if not self.app:
+            return
+        await self.app.stop()
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработчик команды /start"""
@@ -151,4 +148,4 @@ class TravelBot:
             db.close()
 
 # Создаем экземпляр бота
-bot = TravelBot() 
+bot = Bot() 

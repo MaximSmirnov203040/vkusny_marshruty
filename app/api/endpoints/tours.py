@@ -17,6 +17,15 @@ def get_tours(
     tours = db.query(models.Tour).offset(skip).limit(limit).all()
     return tours
 
+@router.get("/popular", response_model=List[schemas.Tour])
+def get_popular_tours(
+    limit: int = 6,
+    db: Session = Depends(get_db)
+):
+    # Получаем туры, отсортированные по количеству заявок
+    tours = db.query(models.Tour).order_by(models.Tour.available_spots.desc()).limit(limit).all()
+    return tours
+
 @router.get("/hot", response_model=List[schemas.Tour])
 def get_hot_tours(
     db: Session = Depends(get_db)

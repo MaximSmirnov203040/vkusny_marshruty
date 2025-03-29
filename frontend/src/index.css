@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #F8F9FA;
+}
+
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Стили для анимаций */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+
+/* Стили для изображений */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Стили для ссылок */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Стили для кнопок */
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+/* Стили для форм */
+input, textarea, select {
+  font-family: inherit;
+}
+
+/* Стили для фокуса */
+:focus {
+  outline: none;
+}
+
+/* Стили для выделения текста */
+::selection {
+  background-color: rgba(255, 107, 107, 0.2);
+  color: #2D3436;
+}

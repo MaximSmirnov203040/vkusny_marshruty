@@ -1,34 +1,33 @@
-version: '3.8'
-
 services:
   web:
     build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://vkusny_user:${DB_PASSWORD}@db:5432/vkusny_marshruty
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
-      - SECRET_KEY=${SECRET_KEY}
-      - ADMIN_USERNAME=${ADMIN_USERNAME}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-    depends_on:
-      - db
+    container_name: vkusny_web
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
     restart: always
 
-  db:
+  postgres:
     image: postgres:12
+    container_name: vkusny_postgres
+    environment:
+      POSTGRES_DB: vkusny_marshruty
+      POSTGRES_USER: vkusny_user
+      POSTGRES_PASSWORD: vkusny_secure_db_pass_2024
+      POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=vkusny_marshruty
-      - POSTGRES_USER=vkusny_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     restart: always
+    command: postgres -c 'max_connections=1000'
 
 volumes:
-  postgres_data: 
+  postgres_data:
