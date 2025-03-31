@@ -15,7 +15,7 @@ def get_tours(
     db: Session = Depends(get_db)
 ):
     tours = db.query(models.Tour).offset(skip).limit(limit).all()
-    return tours
+    return [schemas.Tour.from_orm(tour) for tour in tours]
 
 @router.get("/popular", response_model=List[schemas.Tour])
 def get_popular_tours(
@@ -24,14 +24,14 @@ def get_popular_tours(
 ):
     # Получаем туры, отсортированные по количеству заявок
     tours = db.query(models.Tour).order_by(models.Tour.available_spots.desc()).limit(limit).all()
-    return tours
+    return [schemas.Tour.from_orm(tour) for tour in tours]
 
 @router.get("/hot", response_model=List[schemas.Tour])
 def get_hot_tours(
     db: Session = Depends(get_db)
 ):
     tours = db.query(models.Tour).filter(models.Tour.is_hot == True).all()
-    return tours
+    return [schemas.Tour.from_orm(tour) for tour in tours]
 
 @router.get("/{tour_id}", response_model=schemas.Tour)
 def get_tour(
@@ -44,7 +44,7 @@ def get_tour(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tour not found"
         )
-    return tour
+    return schemas.Tour.from_orm(tour)
 
 @router.post("/", response_model=schemas.Tour)
 def create_tour(
@@ -61,7 +61,7 @@ def create_tour(
     db.add(db_tour)
     db.commit()
     db.refresh(db_tour)
-    return db_tour
+    return schemas.Tour.from_orm(db_tour)
 
 @router.put("/{tour_id}", response_model=schemas.Tour)
 def update_tour(
@@ -81,11 +81,12 @@ def update_tour(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tour not found"
         )
-    for key, value in tour.dict().items():
+    tour_data = tour.dict()
+    for key, value in tour_data.items():
         setattr(db_tour, key, value)
     db.commit()
     db.refresh(db_tour)
-    return db_tour
+    return schemas.Tour.from_orm(db_tour)
 
 @router.delete("/{tour_id}")
 def delete_tour(

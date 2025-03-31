@@ -5,11 +5,51 @@ from app.db.database import get_db
 from app.db import models
 from app.schemas import schemas
 from app.api.endpoints.auth import get_current_user
+from app.bot.notifications import send_request_notification
+import asyncio
 
 router = APIRouter()
 
+@router.post("/guest", response_model=schemas.TravelRequest)
+async def create_guest_request(
+    request: schemas.GuestTravelRequestCreate,
+    db: Session = Depends(get_db)
+):
+    # Проверяем существование тура
+    tour = db.query(models.Tour).filter(models.Tour.id == request.tour_id).first()
+    if tour is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tour not found"
+        )
+    
+    # Проверяем доступность мест
+    if tour.available_spots <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No available spots for this tour"
+        )
+    
+    # Создаем заявку
+    db_request = models.TravelRequest(
+        tour_id=request.tour_id,
+        status="pending",
+        guest_name=request.guest_name,
+        guest_email=request.guest_email,
+        guest_phone=request.guest_phone,
+        comment=request.comment
+    )
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    
+    # Отправляем уведомление
+    asyncio.create_task(send_request_notification(db_request))
+    
+    return db_request
+
 @router.post("/", response_model=schemas.TravelRequest)
-def create_request(
+async def create_request(
     request: schemas.TravelRequestCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -38,6 +78,10 @@ def create_request(
     db.add(db_request)
     db.commit()
     db.refresh(db_request)
+    
+    # Отправляем уведомление
+    asyncio.create_task(send_request_notification(db_request))
+    
     return db_request
 
 @router.get("/my", response_model=List[schemas.TravelRequest])
@@ -85,7 +129,7 @@ def update_request_status(
             detail="Request not found"
         )
     
-    if status not in ["pending", "approved", "rejected"]:
+    if status not in ["pending", "approved", "rejected", "cancelled"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid status"
@@ -95,7 +139,13 @@ def update_request_status(
     if status == "approved":
         # Уменьшаем количество доступных мест
         tour = db_request.tour
-        tour.available_spots -= 1
+        if tour.available_spots > 0:
+            tour.available_spots -= 1
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No available spots for this tour"
+            )
     
     db.commit()
     return {"message": "Request status updated successfully"} 
