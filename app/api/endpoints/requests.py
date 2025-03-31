@@ -5,7 +5,7 @@ from app.db.database import get_db
 from app.db import models
 from app.schemas import schemas
 from app.api.endpoints.auth import get_current_user
-from app.bot.notifications import send_request_notification
+from app.bot.notifications import send_group_notification
 import asyncio
 
 router = APIRouter()
@@ -44,7 +44,7 @@ async def create_guest_request(
     db.refresh(db_request)
     
     # Отправляем уведомление
-    asyncio.create_task(send_request_notification(db_request))
+    asyncio.create_task(send_group_notification(db_request))
     
     return db_request
 
@@ -80,7 +80,7 @@ async def create_request(
     db.refresh(db_request)
     
     # Отправляем уведомление
-    asyncio.create_task(send_request_notification(db_request))
+    asyncio.create_task(send_group_notification(db_request))
     
     return db_request
 
@@ -107,7 +107,7 @@ def get_all_requests(
     requests = db.query(models.TravelRequest).all()
     return requests
 
-@router.put("/{request_id}/status")
+@router.put("/{request_id}/status", response_model=schemas.TravelRequest)
 def update_request_status(
     request_id: int,
     status: str,
@@ -148,4 +148,8 @@ def update_request_status(
             )
     
     db.commit()
-    return {"message": "Request status updated successfully"} 
+    
+    # Отправляем уведомление
+    asyncio.create_task(send_group_notification(db_request))
+    
+    return db_request 
